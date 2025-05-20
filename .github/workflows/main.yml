@@ -1,0 +1,42 @@
+name: "CodeQL Analysis Java y Kotlin con exportación SARIF"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # semanalmente cada domingo a medianoche
+
+jobs:
+  analyze:
+    name: Analizar código con CodeQL
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        language: [ 'java', 'kotlin' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Ejecutar análisis CodeQL y guardar SARIF
+        id: analyze
+        uses: github/codeql-action/analyze@v2
+        with:
+          sarif_output: results/codeql-results-${{ matrix.language }}.sarif
+
+      - name: Subir archivo SARIF como artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: codeql-sarif-${{ matrix.language }}
+          path: results/codeql-results-${{ matrix.language }}.sarif
